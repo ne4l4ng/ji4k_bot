@@ -1,63 +1,87 @@
+#!/usr/bin/env python
+
+import json
 import requests
-import datetime
+import os
+import time
+import urllib
+from dbhelper import DBHelper
 
-class BotHandler:
+db = DBHelper()
 
-    def __init__(self, token):
-        self.token = token
-        self.api_url = "https://api.telegram.org/bot{}/".format(token)
 
-    def get_updates(self, offset=None, timeout=30):
-        method = 'getUpdates'
-        params = {'timeout': timeout, 'offset': offset}
-        resp = requests.get(self.api_url + method, params)
-        result_json = resp.json()['result']
-        return result_json
+TOKEN = os.getenv("TOKEN")
+URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
-    def send_message(self, chat_id, text):
-        params = {'chat_id': chat_id, 'text': text}
-        method = 'sendMessage'
-        resp = requests.post(self.api_url + method, params)
-        return resp
 
-    def get_last_update(self):
-        get_result = self.get_updates()
-        if len(get_result) > 0:
-            last_update = get_result[-1]
-        else:
-            last_update = get_result[len(get_result)]
-        return last_update
+def get_url(url):
+    response = requests.get(url)
+    content = response.content.decode("utf8")
+    return content
 
-token = "618752765:AAE-z-cWQI-hVSZb7h22pQxCpDbCdJawPEw";
-greet_bot = BotHandler(token);
-greetings = ('hello', 'hi', 'greetings', 'sup');
-now = datetime.datetime.now();
+
+def get_json_from_url(url):
+    content = get_url(url)
+    js = json.loads(content)
+    return js
+
+
+def get_updates(offset=None):
+    url = URL + "getUpdates?timeout=100"
+    if offset:
+        url += "&offset={}".format(offset)
+    js = get_json_from_url(url)
+    return js
+
+
+def get_last_chat_id_and_text(updates):
+    num_updates = len(updates["result"])
+    last_update = num_updates - 1
+    text = updates["result"][last_update]["message"]["text"]
+    chat_id = updates["result"][last_update]["message"]["chat"]["id"]
+    return (text, chat_id)
+
+
+def get_last_update_id(updates):
+    update_ids = []
+    for update in updates["result"]:
+        update_ids.append(int(update["update_id"]))
+    return max(update_ids)
+
+
+def send_message(text, chat_id):
+    text = urllib.parse.quote_plus(text)
+    url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
+    get_url(url)
+
+
+def handle_updates(updates):
+    for update in updates["result"]:
+        try:
+            text = update["message"]["text"]
+            chat = update["message"]["chat"]["id"]
+            items = db.get_items()
+            if text in items:
+                db.delete_item(text)
+                items = db.get_items()
+            else:
+                db.add_item(text)
+                items = db.get_items()
+            message = "\n".join(items)
+            send_message(message, chat)
+        except KeyError:
+            pass
+
 
 def main():
-    new_offset = None
-    today = now.day
-    hour = now.hour
+    last_update_id = None
     while True:
-        greet_bot.get_updates(new_offset)
-        last_update = greet_bot.get_last_update()
-        last_update_id = last_update['update_id']
-        last_chat_text = last_update['message']['text']
-        last_chat_id = last_update['message']['chat']['id']
-        last_chat_name = last_update['message']['chat']['first_name']
-        if last_chat_text.lower() in greetings and today == now.day and 6 <= hour < 12:
-                greet_bot.send_message(last_chat_id, 'Good Morning  {}'.format(last_chat_name))
-                today += 1
-        elif last_chat_text.lower() in greetings and today == now.day and 12 <= hour < 17:
-                greet_bot.send_message(last_chat_id, 'Good Afternoon {}'.format(last_chat_name))
-                today += 1
-        elif last_chat_text.lower() in greetings and today == now.day and 17 <= hour < 23:
-                greet_bot.send_message(last_chat_id, 'Good Evening  {}'.format(last_chat_name))
-                today += 1
+        print("getting updates")
+        updates = get_updates(last_update_id)
+        if len(updates["result"]) > 0:
+            last_update_id = get_last_update_id(updates) + 1
+            echo_all(updates)
 
-        new_offset = last_update_id + 1
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        exit()
+    main()
