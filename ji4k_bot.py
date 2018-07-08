@@ -9,7 +9,7 @@ from dbhelper import DBHelper
 
 db = DBHelper()
 
-# 618752765:AAE-z-cWQI-hVSZb7h22pQxCpDbCdJawPEw
+
 TOKEN = os.getenv("TOKEN")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
@@ -49,38 +49,65 @@ def get_last_update_id(updates):
     return max(update_ids)
 
 
-def send_message(text, chat_id):
+def send_message(text, chat_id, reply_markup=None):
     text = urllib.parse.quote_plus(text)
-    url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
+    url = URL + "sendMessage?text={}&chat_id={}&parse_mode=Markdown".format(text, chat_id)
+    if reply_markup:
+        url += "&reply_markup={}".format(reply_markup)
     get_url(url)
 
 
 def handle_updates(updates):
     for update in updates["result"]:
-        try:
+        print(update)
+        if("message" in update):
             text = update["message"]["text"]
             chat = update["message"]["chat"]["id"]
-            items = db.get_items()
-            if text in items:
-                db.delete_item(text)
-                items = db.get_items()
+            items = db.get_items(chat)  ##
+            if text == "/done":
+                if (items):
+                    keyboard = build_keyboard(items)
+                    send_message("Select an item to delete", chat, keyboard)
+                else:
+                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat)
+            elif text == "/start":
+                send_message(
+                    "Welcome to your personal To Do list. Send any text to me and I'll store it as an item. Send /done to remove items",
+                    chat)
+            elif text.startswith("/"):
+                continue
+            elif text in items:
+                db.delete_item(text, chat)  ##
+                items = db.get_items(chat)  ##
+                if(items):
+                    keyboard = build_keyboard(items)
+                    send_message("Select an item to delete", chat, keyboard)
+                else:
+                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat)
             else:
-                db.add_item(text)
-                items = db.get_items()
-            message = "\n".join(items)
-            send_message(message, chat)
-        except KeyError:
-            pass
+                db.add_item(text, chat)  ##
+                items = db.get_items(chat)  ##
+                message = "\n".join(items)
+                send_message(message, chat)
+        else:
+            print%("message not in update")
+
+
+def build_keyboard(items):
+    keyboard = [[item] for item in items]
+    reply_markup = {"keyboard":keyboard, "one_time_keyboard": True}
+    return json.dumps(reply_markup)
 
 
 def main():
+    db.setup()
     last_update_id = None
     while True:
         print("getting updates")
         updates = get_updates(last_update_id)
         if len(updates["result"]) > 0:
             last_update_id = get_last_update_id(updates) + 1
-            echo_all(updates)
+            handle_updates(updates)
 
 
 if __name__ == '__main__':
