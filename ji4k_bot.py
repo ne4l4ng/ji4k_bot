@@ -63,6 +63,8 @@ def handle_updates(updates):
         if("message" in update):
             text = update["message"]["text"]
             chat = update["message"]["chat"]["id"]
+            first_name = update["message"]["from"]["first_name"]
+            from_id = update["message"]["from"]["id"]
             items = db.get_items(chat)  ##
             if text == "/done":
                 if (items):
@@ -71,6 +73,8 @@ def handle_updates(updates):
                 else:
                     send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat)
             elif text == "/start":
+                makan_places = db.get_makan_places()
+                print("makan_places={}".format(makan_places))
                 send_message(
                     "Welcome to your personal To Do list. Send any text to me and I'll store it as an item. Send /done to remove items",
                     chat)
@@ -97,6 +101,16 @@ def build_keyboard(items):
     keyboard = [[item] for item in items]
     reply_markup = {"keyboard":keyboard, "one_time_keyboard": True}
     return json.dumps(reply_markup)
+
+
+def echo_all(updates):
+    for update in updates["result"]:
+        try:
+            text = update["message"]["text"]
+            chat = update["message"]["chat"]["id"]
+            send_message(text, chat)
+        except Exception as e:
+            print(e)
 
 
 def main():
