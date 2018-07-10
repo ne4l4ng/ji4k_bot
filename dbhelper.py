@@ -11,7 +11,7 @@ class DBHelper:
     def setup(self):
         self.setup_makan_places()
         jiak_session_tblstmt = \
-            "CREATE TABLE IF NOT EXISTS jiak_sessions (id int, chat_id int, venue text, from_if, from_name text)"
+            "CREATE TABLE IF NOT EXISTS jiak_sessions (id int, chat_id int, venue text, first_name text)"
         tblstmt = "CREATE TABLE IF NOT EXISTS items (description text, owner text)"
         itemidx = "CREATE INDEX IF NOT EXISTS itemIndex ON items (description ASC)"
         ownidx = "CREATE INDEX IF NOT EXISTS ownIndex ON items (owner ASC)"
@@ -38,21 +38,28 @@ class DBHelper:
         args = (owner,)
         return [x[0] for x in self.conn.execute(stmt, args)]
 
-    def add_vote(self, chat_id, venue, from_id, from_name):
-        stmt = "INSERT INTO jiak_sessions (chat_id, venue, from_id, from_name) VALUES (?, ?, ?, ?)"
-        args = (chat_id, venue, from_id, from_name)
+    def add_vote(self, chat_id, venue, first_name):
+        stmt = "INSERT INTO jiak_sessions (chat_id, venue, first_name) VALUES (?, ?, ?)"
+        args = (chat_id, venue, first_name)
         self.conn.execute(stmt, args)
         self.conn.commit()
 
+    ##TODO refactor
     def setup_makan_places(self):
-        makan_tblstmt = "CREATE TABLE IF NOT EXISTS makan_places (id int, name text)" \
-                        "VALUES (1, 'Cafeteria'),(2, 'Opposite'), (3, 'Fish Soup'),(4,'Collins')"
-       ## insert_makan_stmt = "INSERT INTO makan_places (id, name) VALUES (1, 'Cafeteria'),(2, 'Opposite')," \
-       ##                     "(3, 'Fish Soup'),(4,'Collins')"
+        makan_tblstmt = "CREATE TABLE IF NOT EXISTS makan_places (id int, name text)"
         self.conn.execute(makan_tblstmt)
-       ## self.conn.execute(insert_makan_stmt)
+        if (len(self.get_makan_places())) == 0:
+            insert_makan_stmt = "INSERT INTO makan_places (id, name) VALUES (1, 'Cafeteria'),(2, 'Opposite')," \
+                            "(3, 'Fish Soup'),(4,'Collins')"
+            self.conn.execute(insert_makan_stmt)
         self.conn.commit()
 
     def get_makan_places(self):
         stmt = "SELECT name FROM makan_places"
         return [x[0] for x in self.conn.execute(stmt)]
+
+    def get_jiak_sessions(self, chat_id):
+        print("chat_id.type = {}".format(type(chat_id)))
+        stmt = "SELECT * FROM jiak_sessions WHERE chat_id = (?)"
+        args = (chat_id,)
+        return (self.conn.execute(stmt, args)).fetchall()

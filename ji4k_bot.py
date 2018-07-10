@@ -6,6 +6,7 @@ import os
 import time
 import urllib
 from dbhelper import DBHelper
+import datetime
 
 db = DBHelper()
 
@@ -62,39 +63,45 @@ def handle_updates(updates):
         print(update)
         if("message" in update):
             text = update["message"]["text"]
-            chat = update["message"]["chat"]["id"]
+            chat_id = update["message"]["chat"]["id"]
+            print("chat_id={}".format(chat_id))
             first_name = update["message"]["from"]["first_name"]
-            from_id = update["message"]["from"]["id"]
-            items = db.get_items(chat)  ##
-            if text == "/done":
-                if (items):
-                    keyboard = build_keyboard(items)
-                    send_message("Select an item to delete", chat, keyboard)
-                else:
-                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat)
-            elif text == "/start":
+            date = datetime.datetime.utcfromtimestamp(update["message"]["date"])
+            print("date={}".format(date))
+            ##from_id = update["message"]["from"]["id"]
+            ##print("from_id={}".format(from_id))
+            jiak_sessions = db.get_jiak_sessions(chat_id)  ##
+            print("jiak_sessions={}".format(jiak_sessions))
+            if text == "/start":
                 makan_places = db.get_makan_places()
                 print("makan_places={}".format(makan_places))
-                send_message(
-                    "Welcome to your personal To Do list. Send any text to me and I'll store it as an item. Send /done to remove items",
-                    chat)
+                if makan_places:
+                    keyboard = build_keyboard(makan_places)
+                    send_message("Hello! Time to Jiak, lai choose venue: ", chat_id, keyboard)
+            if text == "/done":
+                if jiak_sessions:
+                    keyboard = build_keyboard(jiak_sessions)
+                    send_message("Select an item to delete", chat_id, keyboard)
+                else:
+                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat_id)
+
             elif text.startswith("/"):
                 continue
-            elif text in items:
-                db.delete_item(text, chat)  ##
-                items = db.get_items(chat)  ##
-                if(items):
-                    keyboard = build_keyboard(items)
-                    send_message("Select an item to delete", chat, keyboard)
+            elif text in jiak_sessions:
+                print("in here")
+                db.delete_item(text, chat_id)  ##
+                jiak_sessions = db.get_items(chat_id)  ##
+                if(jiak_sessions):
+                    keyboard = build_keyboard(jiak_sessions)
+                    send_message("Select an item to delete", chat_id, keyboard)
                 else:
-                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat)
+                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat_id)
             else:
-                db.add_item(text, chat)  ##
-                items = db.get_items(chat)  ##
-                message = "\n".join(items)
-                send_message(message, chat)
+                db.add_vote(chat_id, text, first_name)  ##
+                message = "{} votes {} \n".format(first_name,text)
+                send_message(message, chat_id)
         else:
-            print%("message not in update")
+            print("message not in update")
 
 
 def build_keyboard(items):
