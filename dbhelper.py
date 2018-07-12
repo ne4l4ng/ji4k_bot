@@ -62,4 +62,4 @@ class DBHelper:
         print("date = {}".format(date))
         stmt = "SELECT venue FROM jiak_sessions WHERE date = (?)"
         args = (date,)
-        return (self.conn.execute(stmt, args)).fetchall()
+        return [x[0] for x in self.conn.execute(stmt, args)]
