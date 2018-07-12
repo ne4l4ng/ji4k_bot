@@ -63,14 +63,16 @@ def handle_updates(updates):
         print(update)
         if("message" in update):
             text = update["message"]["text"]
+            print("text={}".format(text))
             chat_id = update["message"]["chat"]["id"]
             print("chat_id={}".format(chat_id))
             first_name = update["message"]["from"]["first_name"]
             date = datetime.datetime.utcfromtimestamp(update["message"]["date"])
+            session_date = date.strftime("%d-%m-%y")
             print("date={}".format(date))
             ##from_id = update["message"]["from"]["id"]
             ##print("from_id={}".format(from_id))
-            jiak_sessions = db.get_jiak_sessions(chat_id)  ##
+            jiak_sessions = db.get_jiak_sessions(session_date)  ##
             print("jiak_sessions={}".format(jiak_sessions))
             if text == "/start":
                 makan_places = db.get_makan_places()
@@ -97,7 +99,7 @@ def handle_updates(updates):
                 else:
                     send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat_id)
             else:
-                db.add_vote(chat_id, text, first_name)  ##
+                db.add_vote(text, chat_id,session_date)  ##
                 message = "{} votes {} \n".format(first_name,text)
                 send_message(message, chat_id)
         else:

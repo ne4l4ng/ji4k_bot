@@ -11,7 +11,7 @@ class DBHelper:
     def setup(self):
         self.setup_makan_places()
         jiak_session_tblstmt = \
-            "CREATE TABLE IF NOT EXISTS jiak_sessions (id int, chat_id int, venue text, first_name text)"
+            "CREATE TABLE IF NOT EXISTS jiak_sessions (venue text, chat_id int, date text)"
         tblstmt = "CREATE TABLE IF NOT EXISTS items (description text, owner text)"
         itemidx = "CREATE INDEX IF NOT EXISTS itemIndex ON items (description ASC)"
         ownidx = "CREATE INDEX IF NOT EXISTS ownIndex ON items (owner ASC)"
@@ -38,9 +38,9 @@ class DBHelper:
         args = (owner,)
         return [x[0] for x in self.conn.execute(stmt, args)]
 
-    def add_vote(self, chat_id, venue, first_name):
-        stmt = "INSERT INTO jiak_sessions (chat_id, venue, first_name) VALUES (?, ?, ?)"
-        args = (chat_id, venue, first_name)
+    def add_vote(self, venue, chat_id, date):
+        stmt = "INSERT INTO jiak_sessions (venue, chat_id, date) VALUES (?, ?, ?)"
+        args = (venue, chat_id, date)
         self.conn.execute(stmt, args)
         self.conn.commit()
 
@@ -58,8 +58,8 @@ class DBHelper:
         stmt = "SELECT name FROM makan_places"
         return [x[0] for x in self.conn.execute(stmt)]
 
-    def get_jiak_sessions(self, chat_id):
-        print("chat_id.type = {}".format(type(chat_id)))
-        stmt = "SELECT * FROM jiak_sessions WHERE chat_id = (?)"
-        args = (chat_id,)
+    def get_jiak_sessions(self, date):
+        print("date = {}".format(date))
+        stmt = "SELECT venue FROM jiak_sessions WHERE date = (?)"
+        args = (date,)
         return (self.conn.execute(stmt, args)).fetchall()
