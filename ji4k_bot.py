@@ -95,12 +95,11 @@ def handle_updates(updates, makan_places, kakis):
                 if first_name in kakis:
                     message = "{} already voted!".format(first_name)
                     send_message(message, chat_id)
-                
                 else:
-                kakis.append(first_name)
-                db.add_vote(text, chat_id, session_date)  ##
-                message = "{} votes {} \n".format(first_name, text)
-                send_message(message, chat_id)
+                    kakis.append(first_name)
+                    db.add_vote(text, chat_id, session_date)  ##
+                    message = "{} votes {} \n".format(first_name, text)
+                    send_message(message, chat_id)
         else:
             print("message not in update")
 
