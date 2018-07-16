@@ -61,7 +61,7 @@ def send_message(text, chat_id, reply_markup=None):
 def handle_updates(updates, makan_places, kakis):
     for update in updates["result"]:
         print(update)
-        if("message" in update):
+        if "message" in update:
             text = update["message"]["text"]
             print("text={}".format(text))
             chat_id = update["message"]["chat"]["id"]
@@ -80,21 +80,23 @@ def handle_updates(updates, makan_places, kakis):
                     keyboard = build_keyboard(makan_places)
                     send_message("Hello! Time to Jiak, lai choose venue: ", chat_id, keyboard)
             if text == "/done":
+                votes = db.tally_jiak_sessions(session_date);
+                print("votes={}".format(votes))
+                message = "Venue | Votes \n"
+                for x in votes:
+                    message += "{} | {} \n".format(x[0], x[1])
+                send_message(message, chat_id)
+                message = "Kia! Let's go jiak at {}".format(votes[0][0])
+                send_message(message, chat_id)
                 kakis.clear()
-                if jiak_sessions:
-                    keyboard = build_keyboard(jiak_sessions)
-                    send_message("Select an item to delete", chat_id, keyboard)
-                else:
-                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat_id)
-
             elif text.startswith("/"):
                 continue
             elif text in makan_places:
-                '''if first_name in kakis:
+                if first_name in kakis:
                     message = "{} already voted!".format(first_name)
                     send_message(message, chat_id)
                 
-                else:'''
+                else:
                 kakis.append(first_name)
                 db.add_vote(text, chat_id, session_date)  ##
                 message = "{} votes {} \n".format(first_name, text)

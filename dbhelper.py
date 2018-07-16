@@ -63,3 +63,15 @@ class DBHelper:
         stmt = "SELECT venue FROM jiak_sessions WHERE date = (?)"
         args = (date,)
         return [x[0] for x in self.conn.execute(stmt, args)]
+
+    def tally_jiak_sessions(self, date):
+        print("date = {}".format(date))
+        stmt = "SELECT venue, count(venue) as 'votes' FROM jiak_sessions" \
+               " WHERE date = (?) group by venue order by votes DESC"
+        args = (date,)
+        c = self.conn.cursor()
+        votes = []
+        for rows in c.execute(stmt, args):
+            print(rows)
+            votes.append([rows[0], rows[1]])
+        return votes
