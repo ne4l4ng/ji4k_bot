@@ -58,7 +58,7 @@ def send_message(text, chat_id, reply_markup=None):
     get_url(url)
 
 
-def handle_updates(updates):
+def handle_updates(updates, makan_places, kakis):
     for update in updates["result"]:
         print(update)
         if("message" in update):
@@ -75,12 +75,12 @@ def handle_updates(updates):
             jiak_sessions = db.get_jiak_sessions(session_date)  ##
             print("jiak_sessions={}".format(jiak_sessions))
             if text == "/start":
-                makan_places = db.get_makan_places()
                 print("makan_places={}".format(makan_places))
                 if makan_places:
                     keyboard = build_keyboard(makan_places)
                     send_message("Hello! Time to Jiak, lai choose venue: ", chat_id, keyboard)
             if text == "/done":
+                kakis.clear()
                 if jiak_sessions:
                     keyboard = build_keyboard(jiak_sessions)
                     send_message("Select an item to delete", chat_id, keyboard)
@@ -89,21 +89,20 @@ def handle_updates(updates):
 
             elif text.startswith("/"):
                 continue
-            elif text in jiak_sessions:
-                print("in here")
-                db.delete_item(text, chat_id)  ##
-                jiak_sessions = db.get_items(chat_id)  ##
-                if(jiak_sessions):
-                    keyboard = build_keyboard(jiak_sessions)
-                    send_message("Select an item to delete", chat_id, keyboard)
-                else:
-                    send_message("To Do list is empty!  Send any text to me and I'll store it as an item.", chat_id)
-            else:
-                db.add_vote(text, chat_id,session_date)  ##
-                message = "{} votes {} \n".format(first_name,text)
+            elif text in makan_places:
+                '''if first_name in kakis:
+                    message = "{} already voted!".format(first_name)
+                    send_message(message, chat_id)
+                
+                else:'''
+                kakis.append(first_name)
+                db.add_vote(text, chat_id, session_date)  ##
+                message = "{} votes {} \n".format(first_name, text)
                 send_message(message, chat_id)
         else:
             print("message not in update")
+
+    print("kakis = {}".format(kakis))
 
 
 def build_keyboard(items):
@@ -124,13 +123,16 @@ def echo_all(updates):
 
 def main():
     db.setup()
+    makan_places = db.get_makan_places()
     last_update_id = None
+    kakis = []
+
     while True:
         print("getting updates")
         updates = get_updates(last_update_id)
         if len(updates["result"]) > 0:
             last_update_id = get_last_update_id(updates) + 1
-            handle_updates(updates)
+            handle_updates(updates, makan_places, kakis)
 
 
 if __name__ == '__main__':
