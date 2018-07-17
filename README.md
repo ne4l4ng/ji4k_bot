@@ -1,4 +1,4 @@
-ji4k bot is a simple bot that helps groups decide where to eat
+ji4k bot is a simple telegram bot that helps groups decide where to eat
 using a simple voting system.
 
 Flow:
