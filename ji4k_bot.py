@@ -70,16 +70,24 @@ def handle_updates(updates, makan_places, kakis):
             date = datetime.datetime.utcfromtimestamp(update["message"]["date"])
             session_date = date.strftime("%d-%m-%y")
             print("date={}".format(date))
-            ##from_id = update["message"]["from"]["id"]
-            ##print("from_id={}".format(from_id))
-            jiak_sessions = db.get_jiak_sessions(session_date)  ##
-            print("jiak_sessions={}".format(jiak_sessions))
-            if text == "/start":
+
+            if text == "/start" or text == "/start_jiak":
                 print("makan_places={}".format(makan_places))
                 if makan_places:
                     keyboard = build_keyboard(makan_places)
-                    send_message("Hello! Time to Jiak, lai choose venue: ", chat_id, keyboard)
-            if text == "/done":
+                    send_message("Hello! Welcome to Ji4k Bot. Your friendly assistant to help decide where to jiak"
+                                 " via voting! Use /help for cmds list.\n"
+                                 "Now.. Time to Jiak! lai choose venue:", chat_id, keyboard)
+            elif text == "/join":
+                jiak_sessions = db.get_jiak_sessions(session_date)  ##
+                print("jiak_sessions={}".format(jiak_sessions))
+                if jiak_sessions:
+                    if makan_places:
+                        keyboard = build_keyboard(makan_places)
+                        send_message("lai choose venue", chat_id, keyboard)
+                else:
+                    send_message("No jio yet, use /start to start voting!", chat_id)
+            elif text == "/done":
                 votes = db.tally_jiak_sessions(session_date);
                 print("votes={}".format(votes))
                 message = "Venue | Votes \n"
@@ -89,8 +97,12 @@ def handle_updates(updates, makan_places, kakis):
                 message = "Kia! Let's go jiak at {}".format(votes[0][0])
                 send_message(message, chat_id)
                 kakis.clear()
-            elif text.startswith("/"):
-                continue
+            elif text == "/help":
+                help_msg = "use /start or /start_jiak to start voting for today\n" \
+                          "use /join to join an existing jiak session and vote your choice\n"\
+                          "use /done after all kakis have voted to get the result\n" \
+                          "use /help to see this message again.\n"
+                send_message(help_msg, chat_id)
             elif text in makan_places:
                 if first_name in kakis:
                     message = "{} already voted!".format(first_name)
@@ -100,8 +112,10 @@ def handle_updates(updates, makan_places, kakis):
                     db.add_vote(text, chat_id, session_date)  ##
                     message = "{} votes {} \n".format(first_name, text)
                     send_message(message, chat_id)
+            elif text.startswith("/"):
+                continue
         else:
-            print("message not in update")
+            print("message/text not in update, possibly added to new group")
 
     print("kakis = {}".format(kakis))
 

@@ -50,7 +50,7 @@ class DBHelper:
         self.conn.execute(makan_tblstmt)
         if (len(self.get_makan_places())) == 0:
             insert_makan_stmt = "INSERT INTO makan_places (id, name) VALUES (1, 'Cafeteria'),(2, 'Opposite')," \
-                            "(3, 'Fish Soup'),(4,'Collins')"
+                            "(3, 'Fish Soup'),(4,'Collins'),(5,'JTC')"
             self.conn.execute(insert_makan_stmt)
         self.conn.commit()
 
@@ -63,6 +63,13 @@ class DBHelper:
         stmt = "SELECT venue FROM jiak_sessions WHERE date = (?)"
         args = (date,)
         return [x[0] for x in self.conn.execute(stmt, args)]
+
+    def update_jiak_sessions(self, date, done = False):
+        stmt = "update jiak_sessions set date = (select date from jiak_sessions where date = ?) +'1' " \
+               "WHERE date = (?)"
+        args = (date,)
+        self.conn.execute(stmt)
+        self.conn.commit()
 
     def tally_jiak_sessions(self, date):
         print("date = {}".format(date))
