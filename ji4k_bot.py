@@ -10,7 +10,6 @@ import datetime
 
 db = DBHelper()
 
-# 618752765:AAE-z-cWQI-hVSZb7h22pQxCpDbCdJawPEw
 TOKEN = os.getenv("TOKEN")
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
