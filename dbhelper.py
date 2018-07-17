@@ -64,7 +64,7 @@ class DBHelper:
         args = (date,)
         return [x[0] for x in self.conn.execute(stmt, args)]
 
-    def update_jiak_sessions(self, date, done = False):
+    def update_jiak_sessions(self, date):
         stmt = "update jiak_sessions set date = (select date from jiak_sessions where date = ?) +'1' " \
                "WHERE date = (?)"
         args = (date,)
